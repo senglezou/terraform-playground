@@ -18,12 +18,13 @@ variable "subnet_data" {
     cidr_block    = string
     availability_zone = string
     public_ip_on_launch = bool
+    associate_public_subnets_to_route_table = bool
   }))
     default = { subnet = {
         cidr_block = "10.0.10.0/24"
         availability_zone = "eu-west-1c" # todo: make dynamic
         public_ip_on_launch = false
+        associate_public_subnets_to_route_table = false
     }
     }
-
 }

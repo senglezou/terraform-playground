@@ -69,3 +69,13 @@ resource "aws_route" "internet_access_ipv6" {
   destination_cidr_block = "::/0" # might need to be just destination_cidr_block
   gateway_id             = "${aws_internet_gateway.main_ig.id}"
 }
+
+resource "aws_route_table_association" "a" {
+  for_each = {
+      for key, value in "${var.subnet_data}": key => value
+      if value["associate_public_subnets_to_route_table"] == true
+  }
+  subnet_id      = aws_subnet.subnets[each.key].id
+  route_table_id = aws_route_table.public_route_table.id
+}
+
