@@ -1,5 +1,3 @@
-variable "do_ssh_key" {}
-
 data "digitalocean_ssh_key" "tf-test-1-key" {
   name = var.do_ssh_key
 }
