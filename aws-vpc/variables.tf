@@ -18,4 +18,10 @@ variable "subnet_data" {
     cidr_block    = string
     availability_zone = string
   }))
+    default = { subnet = {
+        cidr_block = "10.0.10.0/24"
+        availability_zone = "eu-west-1c" # todo: make dynamic
+    }
+    }
+
 }
