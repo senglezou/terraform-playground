@@ -17,7 +17,7 @@ resource "aws_internet_gateway" "main_ig" {
   vpc_id = "${aws_vpc.main.id}"
 }
 
-# Create publicA, publicB and publicC subnets
+# Create all subnets
 resource "aws_subnet" "subnets" {
   vpc_id                  = "${aws_vpc.main.id}"
   map_public_ip_on_launch = true
@@ -30,25 +30,3 @@ resource "aws_subnet" "subnets" {
     Name = each.key
   }
 }
-
-# Create privateA, privateB and privateC subnets
-# resource "aws_subnet" "private_subnets" {
-#   vpc_id                  = "${aws_vpc.main.id}"
-#   for_each = "${var.private_subnets_info}"
-#   cidr_block = each.value
-
-#   tags = {
-#     Name = each.key
-#   }
-# }
-
-# # Create internalA, internalB and internalC subnets
-# resource "aws_subnet" "internal_subnets" {
-#   vpc_id                  = "${aws_vpc.main.id}"
-#   for_each = "${var.internal_subnets_info}"
-#   cidr_block = each.value
-
-#   tags = {
-#     Name = each.key
-#   }
-# }
