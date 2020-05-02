@@ -11,3 +11,6 @@ The VPC consists of:
     - 1 Public Subnet (10.0.1.0/24, 10.0.2.0/24, 10.0.3.0/24)
     - 1 Private Subnet
     - 1 Internal Subnet
+
+## TODO
+- Add a diagram at some point.
