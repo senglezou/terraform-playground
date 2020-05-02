@@ -3,9 +3,19 @@ variable "aws_region" {
   default     = "eu-west-1" # ireland
 }
 
+# TODO
 variable "aws_amis" {
   default = {
     eu-west-1 = ""
     eu-west-2 = ""
   }
+}
+
+# Great explanation on how to use structural types found here:
+# https://www.intrepidintegration.com/tech/how-to-reference-data-objects-with-terraform/
+variable "subnet_data" {
+  type = map(object({
+    cidr_block    = string
+    availability_zone = string
+  }))
 }
