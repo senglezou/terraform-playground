@@ -79,3 +79,45 @@ resource "aws_route_table_association" "a" {
   route_table_id = aws_route_table.public_route_table.id
 }
 
+# Create a bastion instance. It does not be bigger than t3.micro.
+# -SG
+# Create a security group for the bastion instance
+resource "aws_security_group" "bastion_sg"{
+    name = "bastionSG"
+    description = "SG for the bastion instance"
+    vpc_id = "${aws_vpc.main.id}"
+
+    # allow all outbound traffic
+   egress {
+        from_port   = 0
+        to_port     = 0
+        protocol    = "-1"
+        cidr_blocks = ["0.0.0.0/0"]
+   }
+   # SSH access from anywhere. It's just a bastion afterall!
+   ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+   }
+
+  # HTTP access from the VPC
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["10.0.0.0/16"]
+  }
+
+  tags = {
+    Name = "bastionSG"
+  }
+
+}
+
+data "aws_instance" "bastion" {
+    instance_type = "t3.micro"
+  
+}
+
