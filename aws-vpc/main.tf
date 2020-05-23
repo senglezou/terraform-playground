@@ -3,21 +3,22 @@ provider "aws" {
   region = "${var.aws_region}"
 }
 
+# Create a custom vpc, called staging_vpc
 resource "aws_vpc" "main" {
   cidr_block = "10.0.0.0/16"
   # instance_tenancy = "dedicated" - we don't really need dedicated machines.
 
   tags = {
-    Name = "main"
+    Name = "staging_vpc"
   }
 }
 
 # Create an internet gateway for access to the outside world from the subnets
-resource "aws_internet_gateway" "main_ig" {
+resource "aws_internet_gateway" "staging_ig" {
   vpc_id = "${aws_vpc.main.id}"
 
     tags = {
-    Name = "mainInternetGateway"
+    Name = "staging_ig"
   }
 }
 
@@ -43,12 +44,12 @@ resource "aws_route_table" "public_route_table" {
 #  purposes for the moment being
 #   route {
 #     cidr_block = "0.0.0.0/0"
-#     gateway_id = "${aws_internet_gateway.main_ig.id}"
+#     gateway_id = "${aws_internet_gateway.staging_ig.id}"
 #   }
 
 #   route {
 #     ipv6_cidr_block        = "::/0"
-#     egress_only_gateway_id = "${aws_internet_gateway.main_ig.id}"
+#     egress_only_gateway_id = "${aws_internet_gateway.staging_ig.id}"
 #   }
 
   tags = {
@@ -60,14 +61,14 @@ resource "aws_route_table" "public_route_table" {
 resource "aws_route" "internet_access" {
   route_table_id         = "${aws_route_table.public_route_table.id}"
   destination_cidr_block = "0.0.0.0/0"
-  gateway_id             = "${aws_internet_gateway.main_ig.id}"
+  gateway_id             = "${aws_internet_gateway.staging_ig.id}"
 }
 
 # Grant the VPC internet access through the publicRT using ipv6
 resource "aws_route" "internet_access_ipv6" {
   route_table_id         = "${aws_route_table.public_route_table.id}"
   destination_cidr_block = "::/0" # might need to be just destination_cidr_block
-  gateway_id             = "${aws_internet_gateway.main_ig.id}"
+  gateway_id             = "${aws_internet_gateway.staging_ig.id}"
 }
 
 # Associate only the public subnets with the public route table
@@ -89,6 +90,7 @@ resource "aws_eip" "eips" {
   depends_on = ["aws_internet_gateway.gw"]
 }
 
+# NAT for each public subnet
 resource "aws_nat_gateway" "nat_gw" {
     for_each = {
       for key, value in "${var.subnet_data}": key => value
@@ -100,10 +102,9 @@ resource "aws_nat_gateway" "nat_gw" {
 
   depends_on = ["aws_internet_gateway.gw"]
   tags = {
-    Name = "mainVPC_nat_gw"
+    Name = "nat_gw_"+ each.key
   }
 }
-
 
 # Create private route table, which will be associated to the IG
 resource "aws_route_table" "private_route_tables" {
@@ -112,6 +113,11 @@ resource "aws_route_table" "private_route_tables" {
       if value["associate_subnet_to_route_table"] == private
   }
   vpc_id = "${aws_vpc.main.id}"
+
+  route {
+    cidr_block = "0.0.0.0/0,"
+    nat_gateway_id - = "${aws_nat_gateway.nat_gw["nat_association"].id}"
+  }
 
   tags = {
     Name = value["rt_name_assoc"]

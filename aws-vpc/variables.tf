@@ -21,6 +21,7 @@ variable "subnet_data" {
     public_ip_on_launch = bool
     associate_public_subnets_to_route_table = string
     rt_name_assoc = string
+    nat_association = string
   }))
     default = { subnet = {
         cidr_block = "10.0.10.0/24"
