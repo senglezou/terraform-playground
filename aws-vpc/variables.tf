@@ -5,9 +5,10 @@ variable "aws_region" {
 
 # TODO
 variable "aws_amis" {
+  type = map
   default = {
-    eu-west-1 = ""
-    eu-west-2 = ""
+    eu-west-1 = "ami-06ce3edf0cff21f07"
+    eu-west-2 = "ami-01a6e31ac994bbc09"
   }
 }
 
@@ -18,13 +19,15 @@ variable "subnet_data" {
     cidr_block    = string
     availability_zone = string
     public_ip_on_launch = bool
-    associate_public_subnets_to_route_table = bool
+    associate_public_subnets_to_route_table = string
+    rt_name_assoc = string
   }))
     default = { subnet = {
         cidr_block = "10.0.10.0/24"
-        availability_zone = "eu-west-1c" # todo: make dynamic
+        availability_zone = "eu-west-1c"
         public_ip_on_launch = false
-        associate_public_subnets_to_route_table = false
+        associate_public_subnets_to_route_table = private
+        rt_name_assoc = privateA-rt
     }
     }
 }

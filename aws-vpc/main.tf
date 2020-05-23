@@ -52,7 +52,7 @@ resource "aws_route_table" "public_route_table" {
 #   }
 
   tags = {
-    Name = "publicRT"
+    Name = "public-rt"
   }
 }
 
@@ -70,14 +70,64 @@ resource "aws_route" "internet_access_ipv6" {
   gateway_id             = "${aws_internet_gateway.main_ig.id}"
 }
 
-resource "aws_route_table_association" "a" {
+# Associate only the public subnets with the public route table
+resource "aws_route_table_association" "public_rt_assoc" {
   for_each = {
       for key, value in "${var.subnet_data}": key => value
-      if value["associate_public_subnets_to_route_table"] == true
+      if value["associate_subnet_to_route_table"] == public
   }
   subnet_id      = aws_subnet.subnets[each.key].id
   route_table_id = aws_route_table.public_route_table.id
 }
+
+resource "aws_eip" "eips" {
+    for_each = {
+      for key, value in "${var.subnet_data}": key => value
+      if value["associate_subnet_to_route_table"] == public
+  }
+  vpc = true
+  depends_on = ["aws_internet_gateway.gw"]
+}
+
+resource "aws_nat_gateway" "nat_gw" {
+    for_each = {
+      for key, value in "${var.subnet_data}": key => value
+      if value["associate_subnet_to_route_table"] == public
+  }
+
+  allocation_id = "${aws_eip.id}"
+  subnet_id = "${aws_subnet.subnets[each.key].id}"
+
+  depends_on = ["aws_internet_gateway.gw"]
+  tags = {
+    Name = "mainVPC_nat_gw"
+  }
+}
+
+
+# Create private route table, which will be associated to the IG
+resource "aws_route_table" "private_route_tables" {
+  for_each = {
+      for key, value in "${var.subnet_data}": key => value
+      if value["associate_subnet_to_route_table"] == private
+  }
+  vpc_id = "${aws_vpc.main.id}"
+
+  tags = {
+    Name = value["rt_name_assoc"]
+  }
+}
+
+# Associate only the public subnets with the route table
+resource "aws_route_table_association" "private_rt_assoc" {
+  for_each = {
+      for key, value in "${var.subnet_data}": key => value
+      if value["associate_subnet_to_route_table"] == private || value["associate_subnet_to_route_table"] == internal
+  }
+  subnet_id      = aws_subnet.subnets[each.key].id
+  route_table_id = aws_route_table.public_route_table[value["rt_name_assoc"]].id
+}
+
 
 # Create a bastion instance. It does not be bigger than t3.micro.
 # -SG
@@ -116,8 +166,21 @@ resource "aws_security_group" "bastion_sg"{
 
 }
 
-data "aws_instance" "bastion" {
+# Create a bastion instance to
+resource "aws_instance" "bastion" {
     instance_type = "t3.micro"
+    ami           = "${var.aws_amis["${var.aws_region}"]}"
+    subnet_id = "${aws_subnet.subnets["publicBsubnet"].id}"
+    associate_public_ip_address = true
+    vpc_security_group_ids = [
+      "${aws_security_group.bastion_sg.id}",
+    ]
+    key_name   = "stos_stella_key"
+
+    tags = {
+    Name = "BastionHost"
+    Environment = "staging"
+    }
   
 }
 
