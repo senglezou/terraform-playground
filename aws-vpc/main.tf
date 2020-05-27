@@ -71,72 +71,75 @@ resource "aws_route" "internet_access_ipv6" {
   gateway_id             = "${aws_internet_gateway.staging_ig.id}"
 }
 
-# Associate only the public subnets with the public route table
+# Associate all the public subnets with the public route table
 resource "aws_route_table_association" "public_rt_assoc" {
   for_each = {
       for key, value in "${var.subnet_data}": key => value
-      if value["associate_subnet_to_route_table"] == public
+      if value["associate_subnet_to_route_table"] == "public"
   }
   subnet_id      = aws_subnet.subnets[each.key].id
   route_table_id = aws_route_table.public_route_table.id
 }
 
+# Create an elastic ip associated with each public subnet
 resource "aws_eip" "eips" {
     for_each = {
       for key, value in "${var.subnet_data}": key => value
-      if value["associate_subnet_to_route_table"] == public
+      if value["associate_subnet_to_route_table"] == "public"
   }
   vpc = true
-  depends_on = ["aws_internet_gateway.gw"]
+  depends_on = [aws_internet_gateway.staging_ig]
+  tags = {
+    Name = format("eip_%s", each.key)
+  }
 }
 
-# NAT for each public subnet
+# Create a NAT for each public subnet
 resource "aws_nat_gateway" "nat_gw" {
     for_each = {
       for key, value in "${var.subnet_data}": key => value
-      if value["associate_subnet_to_route_table"] == public
+      if value["associate_subnet_to_route_table"] == "public"
   }
 
-  allocation_id = "${aws_eip.id}"
+  allocation_id = "${aws_eip.eips[each.key].id}"
   subnet_id = "${aws_subnet.subnets[each.key].id}"
 
-  depends_on = ["aws_internet_gateway.gw"]
+  depends_on = [aws_internet_gateway.staging_ig]
   tags = {
-    Name = "nat_gw_"+ each.key
+    Name = format("nat_gw_%s", each.key)
   }
 }
 
-# Create private route table, which will be associated to the IG
+# Create private route table, which will be associated to the nat in the given namespace
 resource "aws_route_table" "private_route_tables" {
   for_each = {
       for key, value in "${var.subnet_data}": key => value
-      if value["associate_subnet_to_route_table"] == private
+      if value["associate_subnet_to_route_table"] == "private"
   }
   vpc_id = "${aws_vpc.main.id}"
 
   route {
     cidr_block = "0.0.0.0/0,"
-    nat_gateway_id - = "${aws_nat_gateway.nat_gw["nat_association"].id}"
+    nat_gateway_id = "${aws_nat_gateway.nat_gw[each.value["nat_association"]].id}"
   }
 
   tags = {
-    Name = value["rt_name_assoc"]
+    Name = format("%s_rt", each.value["rt_name_assoc"])
   }
+  
 }
 
-# Associate only the public subnets with the route table
+# aws_route_table.private_route_tables["privateCsubnet"]
+# Associate each private & internal subnet with the private RT in the corresponding AZ
 resource "aws_route_table_association" "private_rt_assoc" {
   for_each = {
       for key, value in "${var.subnet_data}": key => value
-      if value["associate_subnet_to_route_table"] == private || value["associate_subnet_to_route_table"] == internal
+      if value["associate_subnet_to_route_table"] == "private" || value["associate_subnet_to_route_table"] == "internal"
   }
-  subnet_id      = aws_subnet.subnets[each.key].id
-  route_table_id = aws_route_table.public_route_table[value["rt_name_assoc"]].id
+  subnet_id      = "${aws_subnet.subnets[each.key].id}"
+  route_table_id = "${aws_route_table.private_route_tables[each.value["rt_name_assoc"]].id}"
 }
 
-
-# Create a bastion instance. It does not be bigger than t3.micro.
-# -SG
 # Create a security group for the bastion instance
 resource "aws_security_group" "bastion_sg"{
     name = "bastionSG"
@@ -172,7 +175,7 @@ resource "aws_security_group" "bastion_sg"{
 
 }
 
-# Create a bastion instance to
+# Create a bastion instance. It does not be bigger than t3.micro.
 resource "aws_instance" "bastion" {
     instance_type = "t3.micro"
     ami           = "${var.aws_amis["${var.aws_region}"]}"

@@ -32,7 +32,7 @@ subnet_data = {
         availability_zone = "eu-west-1a" # todo: make dynamic
         public_ip_on_launch = false
         associate_subnet_to_route_table = "private"
-        rt_name_assoc = "privateA-rt"
+        rt_name_assoc = "privateAsubnet"
         nat_association = "publicAsubnet"
 
     },
@@ -41,7 +41,7 @@ subnet_data = {
         availability_zone = "eu-west-1b" # todo: make dynamic
         public_ip_on_launch = false
         associate_subnet_to_route_table = "private"
-        rt_name_assoc = "privateB-rt"
+        rt_name_assoc = "privateBsubnet"
         nat_association = "publicBsubnet"
 
     },
@@ -50,7 +50,7 @@ subnet_data = {
         availability_zone = "eu-west-1c" # todo: make dynamic
         public_ip_on_launch = false
         associate_subnet_to_route_table = "private"
-        rt_name_assoc = "privateC-rt"
+        rt_name_assoc = "privateCsubnet"
         nat_association = "publicCsubnet"
 
     },
@@ -59,7 +59,7 @@ subnet_data = {
         availability_zone = "eu-west-1a" # todo: make dynamic
         public_ip_on_launch = false
         associate_subnet_to_route_table = "internal"
-        rt_name_assoc = "privateA-rt"
+        rt_name_assoc = "privateAsubnet"
         nat_association = ""
 
     },
@@ -68,7 +68,7 @@ subnet_data = {
         availability_zone = "eu-west-1b" # todo: make dynamic
         public_ip_on_launch = false
         associate_subnet_to_route_table = "internal"
-        rt_name_assoc = "privateB-rt"
+        rt_name_assoc = "privateBsubnet"
         nat_association = ""
 
     },
@@ -77,7 +77,7 @@ subnet_data = {
         availability_zone = "eu-west-1c" # todo: make dynamic
         public_ip_on_launch = false
         associate_subnet_to_route_table = "internal"
-        rt_name_assoc = "privateC-rt"
+        rt_name_assoc = "privateCsubnet"
         nat_association = ""
 
     },
